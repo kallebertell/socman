@@ -7,9 +7,9 @@ import socman.model.Direction;
  */
 public interface CommandMediator {
 
+	/** Listens to commands, i.e. directions in which the player requested movement */
 	public interface Listener {
 		public void playerMoved(Direction direction);
-		public void playerWaited();	
 	}
 	
 	public void setListener(Listener listner);

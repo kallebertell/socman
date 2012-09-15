@@ -34,6 +34,14 @@ public class Sprite {
 		this.y = y;
 	}
 
+	public int intX() {
+		return Math.round(x);
+	}
+	
+	public int intY() {
+		return Math.round(y);
+	}
+	
 	@Override public String toString() {
 		return getClass().getSimpleName() + " at ("+getX()+","+getY()+")";
 	}

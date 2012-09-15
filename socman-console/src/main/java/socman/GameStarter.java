@@ -7,7 +7,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import socman.model.Board;
+import socman.model.Board.Status;
 import socman.model.BoardGenerator;
+import socman.util.Logger;
+import socman.util.Logger.Level;
 
 public class GameStarter {
 
@@ -21,16 +24,20 @@ public class GameStarter {
 	}};
 	
 	public static void main(String[] args) {
+		Logger.setLevel(Level.ERROR);
+		
 		Board board = BoardGenerator.generateRandomBoard(5, 4);
+		
 		BoardPrinter boardPrinter = new BoardPrinter(board, System.out);
 		System.out.println("Welcome to the Adventures of Separation of Concerns-Man!");
 
-		while (true) {
+		while (Status.GAME_ACTIVE.equals(board.getStatus())) {
 			boardPrinter.print();
 			System.out.println("Enter next move: (l)eft, (r)ight, (u)p, (d)own or (q)uit > ");
 			getNextCommand().doCommand(board);
 		}
 		
+		System.out.println(board.getStatus());
 	}
 	
 	

@@ -10,6 +10,11 @@ import socman.view.sprite.Sprite;
 import socman.view.tween.TranslateTween;
 import socman.view.tween.Tween;
 
+/**
+ * Animates actions.
+ * Knows which tween to use for respective action and queues these for animations and so on.
+ * 
+ */
 public class ActionAnimator {
 	private static float ANIMATION_DURATION = 150f;
 	
@@ -25,19 +30,16 @@ public class ActionAnimator {
 		this.scale = boardCanvas.getScale();
 	}
 	
-	public void executeAction(final Action action, final Callback callback) {		
+	public void executeAction(final Action action, final Callback actionExecutedCallback) {		
 		Tween.Callback tweenCallback = new Tween.Callback() {
 			@Override public void tweenDisposed() {
 				action.execute();
-				callback.ready(true);
+				boolean shouldContinueExecuting = (action != Action.cancel);
+				actionExecutedCallback.ready(shouldContinueExecuting);
 			}
 		};
 
-		if (action == Action.cancel) {
-			action.execute();
-			callback.ready(false);
-		}
-		
+
 		if (action instanceof MovementAction) {
 			MovementAction moveAction = (MovementAction)action;
 			Sprite sprite = boardCanvas.getSpriteByGameObject(moveAction.getActor());			
@@ -45,6 +47,7 @@ public class ActionAnimator {
 			tweens.add(tween);			
 		
 		} else {
+
 			tweenCallback.tweenDisposed();
 		}
 

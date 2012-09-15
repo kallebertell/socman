@@ -31,7 +31,7 @@ public class GameWindow extends JFrame implements View {
 		int width = board.getWidth();
 		int height = board.getHeight();
 		
-		this.setSize(width*scale, height*scale+20);
+		this.setSize(width*scale, height*scale+23);
 		
 		this.boardCanvas = new BoardCanvas(board, scale);
 		getContentPane().add(boardCanvas);
@@ -39,6 +39,11 @@ public class GameWindow extends JFrame implements View {
 		
 		this.actionAnimator = new ActionAnimator(boardCanvas);
 		
+		listenToChanges(board);
+		setupSprites(board);
+	}
+	
+	private void listenToChanges(Board board) {
 		board.setChangeListener(new ChangeListener() {
 			@Override public void removed(GameObject gameOb) {
 				boardCanvas.removeGameObjectSprite(gameOb);
@@ -47,9 +52,7 @@ public class GameWindow extends JFrame implements View {
 			@Override public void added(GameObject gameOb) {
 				addSpriteForGameObject(gameOb);
 			}
-		});
-		
-		setupSprites(board);
+		});		
 	}
 	
 

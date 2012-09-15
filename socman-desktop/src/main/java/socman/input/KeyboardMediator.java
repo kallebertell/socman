@@ -5,13 +5,18 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
 import socman.model.Direction;
+import socman.util.Logger;
 
 /**
  * Translates keyboard input into commands
  */
 public class KeyboardMediator implements KeyListener, CommandMediator {
 
-	private Listener listener;
+	private Listener listener = new Listener() {
+		@Override public void playerMoved(Direction direction) {
+			Logger.info("Nobody is listening to the players movement: " + direction);
+		}
+	};
 	
 	public KeyboardMediator(Component component) {
 		component.addKeyListener(this);
@@ -34,10 +39,7 @@ public class KeyboardMediator implements KeyListener, CommandMediator {
 		if (event.getKeyCode() == KeyEvent.VK_RIGHT) {
 			listener.playerMoved(Direction.RIGHT);
 		}
-		
-		if (event.getKeyCode() == KeyEvent.VK_SPACE) {
-			listener.playerWaited();
-		}
+	
 	}
 
 	@Override

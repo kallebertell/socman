@@ -7,10 +7,13 @@ import socman.model.Board;
 import socman.model.Coordinate;
 import socman.model.Direction;
 import socman.model.action.Action;
+import socman.model.action.KillAction;
 import socman.model.action.MovementAction;
 
-
-public class Ghost extends GameActor {
+/**
+ * Stupid monster. Uses some deterministic movement pattern.
+ */
+public class Monster extends GameActor {
 
 	public enum MovementStyle {
 		CLOCKWISE,
@@ -22,30 +25,35 @@ public class Ghost extends GameActor {
 	private final int speed;
 	
 	
-	public Ghost(Board board, MovementStyle movementStyle, int speed) {
+	public Monster(Board board, MovementStyle movementStyle, int speed) {
 		super(board);
 		this.speed = speed;
 		this.dirCycle = new DirectionCycle(movementStyle);
 		this.lastMoveDir = dirCycle.next();
 	}
 	
-	public Ghost at(int x, int y) {
+	public Monster at(int x, int y) {
 		this.setCoords(x, y);
 		return this;
 	}
 	
 	@Override
-	public Queue<Action> createActions(Direction playerMoveDirection) {
+	public Queue<Action> createActionsForTurn(Direction playerMoveDirection) {
 		Queue<Action> events = new LinkedList<Action>();
 
 		Coordinate lastCoord = getCoordninate();
 		for (int i=0; i<speed; i++) {
-			MovementAction event = predictMovement(lastCoord);
-			if (event != null) {
-				events.add(event);
-				lastCoord = Coordinate.valueOf(event.getToX(), event.getToY());
+			MovementAction movement = predictMovement(lastCoord);
+			
+			if (movement != null) {
+				events.add(movement);
+				lastCoord = Coordinate.valueOf(movement.getToX(), movement.getToY());
+				if (board.isSocmanAt(lastCoord)) {
+					events.add(new KillAction(board, lastCoord));
+				}
 			}
 		}
+		
 		
 		return events;
 	}
@@ -67,6 +75,14 @@ public class Ghost extends GameActor {
 		return coord.equals(Coordinate.valueOf(x, y));
 	}
 	
+	public int getSpeed() {
+		return speed;
+	}
+
+	public Direction getMovementDirection() {
+		return lastMoveDir;
+	}
+
 	private static class DirectionCycle 
 	{
 		private Direction[] dirs;

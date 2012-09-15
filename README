@@ -1,0 +1,50 @@
+
+
+Socman (Separation of Concerns-MAN) is a sort of turn based game.
+
+=================================================================
+WHY
+
+This is the result of random explorative coding on how it would be like to do strict separation of concerns in game programming. 
+This might not be the way you want to code a game, but it at least demonstrates what some separation of concerns can achieve.
+
+The premise was that I wanted to code a game using TDD and just focus on the game rules; without having to care about how it was going to be rendered,
+animated or any stuff pertaining to presentation. The socman-model module models the game rules, board, actor and, items (Board, Socman, Pill etc.)
+
+The designed that emerged might not feel natural at all. I wanted to be able to animate the change of game state, but I didn't want the 
+game to change it's actual board state before this animation had completed. I guess another way to approach it would have been to make 
+the state changes to the board and animate those changes retroactively.
+
+There are two implementations of the same game, one console based (socman-console) and the other desktop based (socman-desktop).
+One could still do more, all using the same rules from the model module, e.g.:
+- an Android version 
+- a web-based version based where each move requires a new http request-response to the server storing game state 
+- a web-based version run completely on the client (javascript) using GWT
+
+Feel free to fork, hack, copy and do whatever you like. 
+
+=================================================================
+PREREQUISITES
+
+jdk 1.6
+maven 3
+
+=================================================================
+COMPILE
+
+mvn clean install
+
+=================================================================
+RUN
+
+Console version
+
+cd socman-console
+mvn exec:java -Dexec.mainClass=socman.GameStarter
+
+
+Desktop version
+
+cd socman-desktop
+mvn exec:java -Dexec.mainClass=socman.GameStarter
+

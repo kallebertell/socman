@@ -3,6 +3,9 @@ package socman.model.gameobject;
 import socman.model.Board;
 import socman.model.Coordinate;
 
+/**
+ * A game object. It can be placed on the board and has some coordinates.
+ */
 public class GameObject {
 	
 	protected Board board;

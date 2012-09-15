@@ -1,4 +1,4 @@
-package pacturn.model;
+package socman.model;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -10,7 +10,6 @@ import static org.mockito.Mockito.verify;
 
 import java.util.Collection;
 import java.util.EnumSet;
-import java.util.Queue;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -18,10 +17,10 @@ import org.junit.Test;
 import socman.model.Board;
 import socman.model.Board.ChangeListener;
 import socman.model.Direction;
-import socman.model.gameobject.GameActor;
+import socman.model.Round;
 import socman.model.gameobject.GameObject;
-import socman.model.gameobject.Ghost;
-import socman.model.gameobject.Ghost.MovementStyle;
+import socman.model.gameobject.Monster;
+import socman.model.gameobject.Monster.MovementStyle;
 import socman.model.gameobject.Socman;
 
 public class BoardTest {
@@ -62,7 +61,7 @@ public class BoardTest {
 	@Test
 	public void shouldBeAbleToAddPillToBoard() {
 		board.addPill(1,1);
-		assertTrue(board.hasPill(1,1));
+		assertTrue(board.hasPill(Coordinate.valueOf(1, 1)));
 	}
 	
 	@Test
@@ -90,7 +89,7 @@ public class BoardTest {
 		ChangeListener mockChangeListener = mock(ChangeListener.class);
 		board.setChangeListener(mockChangeListener);
 		board.addPill(1, 2);
-		board.addGhost(1, 1, MovementStyle.CLOCKWISE, 2);
+		board.addMonster(1, 1, MovementStyle.CLOCKWISE, 2);
 		board.addSocman(0, 0);
 		verify(mockChangeListener, times(3)).added(any(GameObject.class));
 	}
@@ -107,10 +106,9 @@ public class BoardTest {
 	@Test
 	public void shouldCreateAnActorQuee() {
 		Socman socman = board.addSocman(0, 1);
-		Ghost ghost = board.addGhost(1, 1, MovementStyle.CLOCKWISE, 2);
-		Queue<GameActor> actors = board.newActorQueue();
-		assertEquals(2, actors.size());
-		assertEquals(socman, actors.poll());
-		assertEquals(ghost, actors.poll());
+		Monster ghost = board.addMonster(1, 1, MovementStyle.CLOCKWISE, 2);
+		Round round = board.newGameRound();
+		assertEquals(socman, round.getNextActor());
+		assertEquals(ghost, round.getNextActor());
 	}
 }

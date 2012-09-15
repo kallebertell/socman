@@ -10,9 +10,12 @@ import java.util.Queue;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import socman.model.Board;
 import socman.model.Direction;
+import socman.model.Round;
 import socman.model.action.Action;
 import socman.model.gameobject.GameActor;
 
@@ -33,19 +36,26 @@ public class CommandTest {
 	
 	@Test
 	public void shouldFetchActionAndExecuteItInReactionToUpMove() {
-		LinkedList<GameActor> actorQueue = new LinkedList<GameActor>();
+		Round mockRound = mock(Round.class);
+		when(mockRound.isFinished()).thenAnswer(new Answer<Boolean>() {
+			int cnt = 0;
+			@Override public Boolean answer(InvocationOnMock invocation) throws Throwable {
+				return (++cnt) > 1;
+			}
+		});
+		
 		GameActor mockActor = mock(GameActor.class);
-		actorQueue.add(mockActor);
-		when(mockBoard.newActorQueue()).thenReturn(actorQueue);
+		when(mockRound.getNextActor()).thenReturn(mockActor);
+		when(mockBoard.newGameRound()).thenReturn(mockRound);
 		
 		Queue<Action> actionQueue = new LinkedList<Action>();
 		Action mockAction = mock(Action.class);
 		actionQueue.add(mockAction);
-		when(mockActor.createActions(Direction.UP)).thenReturn(actionQueue);
+		when(mockActor.createActionsForTurn(Direction.UP)).thenReturn(actionQueue);
 		
 		Command.moveUp.doCommand(mockBoard);
 		
-		verify(mockActor, times(1)).createActions(Direction.UP);
+		verify(mockActor, times(1)).createActionsForTurn(Direction.UP);
 		verify(mockAction, times(1)).execute();
 	}
 }

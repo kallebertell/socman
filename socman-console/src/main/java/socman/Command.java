@@ -2,10 +2,11 @@ package socman;
 
 import java.util.Queue;
 
+import socman.model.Actor;
 import socman.model.Board;
 import socman.model.Direction;
+import socman.model.Round;
 import socman.model.action.Action;
-import socman.model.gameobject.GameActor;
 
 public abstract class Command {
 
@@ -30,16 +31,18 @@ public abstract class Command {
 	private static Command newMoveCommand(final Direction dir) {
 		return new Command() {
 			@Override public void doCommand(Board board) {
-				doTurn(dir, board);			
+				doGameRound(dir, board);			
 			}
 		};
 	}
 	
-	private static void doTurn(Direction dir, Board board) {
-		Queue<GameActor> actors = board.newActorQueue();
-	
-		for (GameActor actor : actors) {
-			Queue<Action> actions = actor.createActions(dir);
+	private static void doGameRound(Direction dir, Board board) {
+		Round round = board.newGameRound();
+		
+		// Since this is all synchronous we don't need any of the action callback mumbo-jumbo
+		while (!round.isFinished()) {
+			Actor actor = round.getNextActor();
+			Queue<Action> actions = actor.createActionsForTurn(dir);
 			for (Action action : actions) {
 				action.execute();
 			}

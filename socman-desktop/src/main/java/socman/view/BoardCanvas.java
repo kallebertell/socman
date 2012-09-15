@@ -45,6 +45,7 @@ public class BoardCanvas extends JPanel {
 		drawBorders(g2d);
 	    drawWalls(g2d);
 	    drawSprites(g2d);
+	    drawStatus(g2d);
 	}
 
 	private void drawBorders(Graphics2D g2d) {
@@ -72,6 +73,25 @@ public class BoardCanvas extends JPanel {
 		for (Sprite sprite : sprites) {
 	    	sprite.draw(scale, g2d);
 	    }
+	}
+	
+	private void drawStatus(Graphics2D g2d) {
+		
+		if (!Board.Status.GAME_ACTIVE.equals(board.getStatus())) {
+			g2d.setColor(Color.WHITE);
+			g2d.fillRoundRect(width/2*scale-50, height/2*scale-25, 100, 50, 10, 10);
+			g2d.setColor(Color.LIGHT_GRAY);
+			g2d.drawRoundRect(width/2*scale-50, height/2*scale-25, 100, 50, 10, 10);
+			g2d.setColor(Color.BLACK);
+		}
+
+		if (Board.Status.GAME_LOST.equals(board.getStatus())) {
+			g2d.drawString("YOU LOSE!", width/2*scale-40, height/2*scale+5);
+		}
+		
+		if (Board.Status.GAME_WON.equals(board.getStatus())) {
+			g2d.drawString("YOU WIN!", width/2*scale-40, height/2*scale+5);
+		}
 	}
 	
 	public void addGameObjectSprite(GameObject gameOb, Sprite sprite) {

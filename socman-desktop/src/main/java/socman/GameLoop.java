@@ -8,10 +8,10 @@ import socman.input.CommandMediator;
 import socman.input.CommandMediator.Listener;
 import socman.model.Board;
 import socman.model.Direction;
+import socman.model.Round;
 import socman.model.action.Action;
 import socman.model.action.ActionExecutor;
 import socman.model.action.Callback;
-import socman.model.gameobject.GameActor;
 import socman.util.GameTime;
 import socman.util.Logger;
 import socman.view.View;
@@ -33,24 +33,31 @@ public class GameLoop {
 	private double fps = 0d;
 	private long lastFrameUpdatedAt = GameTime.getMillis();
 	
-	private volatile boolean isProcessingActions = false;
+	private volatile boolean isProcessingRound = false;
 	private volatile boolean isGameRunning = true;
 	
 	
 	public GameLoop(CommandMediator commandMediator, Board board, final View view) {
 		this.board = board;
 		this.view = view;
+		listenToMoveCommands(commandMediator);
+	}
+	
+	private void listenToMoveCommands(CommandMediator commandMediator) {
 		commandMediator.setListener(new Listener() {
 			@Override public void playerMoved(Direction direction) {
 				synchronized (playerMoveDirections) {
+					
+					if (!GameLoop.this.board.isGameActive()) {
+						Logger.info("Ignoring input: "+direction);
+						return;
+					}
+					
 					Logger.info("Requested move in direction "+direction);
 					playerMoveDirections.add(direction);
 				}
 			}
 
-			@Override public void playerWaited() {
-				Logger.info("Requested wait.");
-			}
 		});
 	}
 	
@@ -66,7 +73,7 @@ public class GameLoop {
 		}, "GameLoop-Thread").start();
 	}
 	
-	public void gameLoop() throws InterruptedException {
+	private void gameLoop() throws InterruptedException {
 		
 		while (isGameRunning) {
 			long beganFrameAt = GameTime.getMillis();
@@ -74,7 +81,6 @@ public class GameLoop {
 			gameUpdate(beganFrameAt-lastFrameUpdatedAt);
 			view.draw();
 			lastFrameUpdatedAt = GameTime.getMillis();
-			fps++;
 			
 			long updateAndDrawInMillis = GameTime.getMillis() - beganFrameAt;
 			long frameTimeLeftInMillis = updatePeriod - updateAndDrawInMillis;
@@ -83,7 +89,7 @@ public class GameLoop {
 				frameTimeLeftInMillis = 1;
 			}
 			
-			logFps(beganFrameAt);
+			updateAndLogFps(beganFrameAt);
 			
 			Thread.sleep(frameTimeLeftInMillis);
 		}
@@ -93,7 +99,9 @@ public class GameLoop {
 		isGameRunning = false;
 	}
 
-	private void logFps(long beganFrameAt) {
+	private void updateAndLogFps(long beganFrameAt) {
+		fps++;
+
 		if ((beganFrameAt-fpsMeasuredAt) >= fpsLoggingIntervalInMillis) {
 			fpsMeasuredAt = GameTime.getMillis();
 			Logger.debug(String.format("Fps: %1f.", fps/fpsLoggingInterval));
@@ -106,49 +114,55 @@ public class GameLoop {
 		
 		synchronized (playerMoveDirections) {
 			
-			if (!playerMoveDirections.isEmpty() && !isProcessingActions) {
-				isProcessingActions = true;
-				Direction moveDir = playerMoveDirections.poll();
-				new ActionProcessor(moveDir, new LinkedList<Action>(), board.newActorQueue(), view).processActions();
+			if (!playerMoveDirections.isEmpty() && !isProcessingRound) {
+				isProcessingRound = true;
+				startNewRound(playerMoveDirections.poll());
 			}
 			
 		}
 	}
 	
-	private class ActionProcessor implements Callback {
+	private void startNewRound(Direction playerMoveDirection) {
+		new RoundProcessor(playerMoveDirection, new LinkedList<Action>(), board.newGameRound(), view).processActions();
+	}
+	
+	/**
+	 * Resolves a game round.
+	 */
+	private class RoundProcessor implements Callback {
 
 		private final ActionExecutor executor;
 		private final Queue<Action> actions;
-		private final Queue<GameActor> actors;
+		private final Round round;
 		private final Direction playerMoveDirection;
 		
-		public ActionProcessor(Direction playerMoveDirection, Queue<Action> actions, Queue<GameActor> actors, ActionExecutor executor) {
+		public RoundProcessor(Direction playerMoveDirection, Queue<Action> actions, Round round, ActionExecutor executor) {
 			this.playerMoveDirection = playerMoveDirection;
 			this.actions = actions;
-			this.actors = actors;
+			this.round = round;
 			this.executor = executor;
 		}
 		
 		public void processActions() {
-			
 			if (!actions.isEmpty()) {
 				executor.executeAction(actions.poll(), this);
 			
-			} else if (!actors.isEmpty()) {
-				new ActionProcessor(playerMoveDirection, actors.poll().createActions(playerMoveDirection), actors, executor).processActions();
+			} else if (!round.isFinished()) {
+				Queue<Action> nextActions =  round.getNextActor().createActionsForTurn(playerMoveDirection);
+				new RoundProcessor(playerMoveDirection, nextActions, round, executor).processActions();
 
 			} else {
-				GameLoop.this.isProcessingActions = false;
+				GameLoop.this.isProcessingRound = false;
 
 			}
 		}
 		
-		@Override public void ready(boolean shouldContinueExecuting) {
+		@Override public void ready(boolean shouldContinueExecuting) {			
 			if (shouldContinueExecuting) {
 				processActions();
 			
 			} else {
-				GameLoop.this.isProcessingActions = false;
+				GameLoop.this.isProcessingRound = false;
 				
 			}
 		}

@@ -8,31 +8,56 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
+import socman.model.action.Action;
 import socman.model.gameobject.GameActor;
 import socman.model.gameobject.GameObject;
-import socman.model.gameobject.Ghost;
-import socman.model.gameobject.Socman;
+import socman.model.gameobject.Monster;
+import socman.model.gameobject.Monster.MovementStyle;
 import socman.model.gameobject.Pill;
-import socman.model.gameobject.Ghost.MovementStyle;
+import socman.model.gameobject.Socman;
 
-/**
- * The game board. 
+/** 
+ * A two dimensional board with a width and a height.
+ * Actors and Objects can be placed on the board.
  * 
  */
 public class Board {
 
+	public static enum Status {
+		GAME_ACTIVE,
+		GAME_LOST,
+		GAME_WON;
+	}
+	
 	public static interface ChangeListener {
 		void removed(GameObject gameOb);
 		void added(GameObject gameOb);
 	}
 
-	
+	private Status status = Status.GAME_ACTIVE;
 	private Collection<Direction>[][] wallCords;
 	
-	private List<GameActor> gameChars = new ArrayList<GameActor>();
+	private List<GameActor> gameActors = new ArrayList<GameActor>();
 	private List<GameObject> gameObjects = new ArrayList<GameObject>();
 	private List<Pill> pills = new ArrayList<Pill>();
 
+	/** This guy will take the last turn in a round and update game state. */
+	private final Actor gameJudge = new Actor() {
+		@Override public Queue<Action> createActionsForTurn(Direction direction) {
+			Queue<Action> actions = new LinkedList<Action>();
+			
+			if (Board.this.getPillAmount() < 1) {
+				actions.add(new Action() {
+					@Override public void execute() {
+						setStatus(Status.GAME_WON);
+					}
+				});
+			}
+			
+			return actions;
+		}
+	};
+	
 	private ChangeListener changeListener = new ChangeListener() {
 		@Override public void removed(GameObject gameOb) {
 			// no-op impl
@@ -53,17 +78,41 @@ public class Board {
 	}
 	
 	public boolean isLegalMove(int fromX, int fromY, Direction direction) {
-		return getLegalMoves(fromX, fromY).contains(direction) 
-				&& !isAnyoneAt(direction.adjust(Coordinate.valueOf(fromX,fromY)));
+		return getLegalMoves(fromX, fromY).contains(direction)
+				&& !isMonsterAt(direction.adjust(Coordinate.valueOf(fromX,fromY)));
+	}
+	
+	public boolean isMonsterAt(Coordinate coord) {
+		for (GameActor actor : gameActors) {
+			if (!(actor instanceof Monster)) {
+				continue;
+			}
+			
+			if (actor.getCoordninate().equals(coord)) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 	
 	public boolean isAnyoneAt(Coordinate coord) {
-		for (GameActor ghost : gameChars) {
+		for (GameActor ghost : gameActors) {
 			if (ghost.getCoordninate().equals(coord)) {
 				return true;
 			}
 		}
 
+		return false;
+	}
+	
+	public boolean isSocmanAt(Coordinate coord) {
+		for (GameActor actor : gameActors) {
+			if (actor instanceof Socman) {
+				return actor.getCoordninate().equals(coord);
+			}
+		}
+		
 		return false;
 	}
 
@@ -137,7 +186,11 @@ public class Board {
 		return pill;
 	}
 	
-	public boolean hasPill(int x, int y) {
+	public boolean hasPill(Coordinate coord) {
+		return hasPill(coord.getX(), coord.getY());
+	}
+	
+	private boolean hasPill(int x, int y) {
 		return getPillAt(x, y) != null;
 	}
 
@@ -152,13 +205,17 @@ public class Board {
 	
 	public void removePill(int x, int y) {
 		if (!hasPill(x,y)) {
-			throw new BoardException("No pill at "+x+" "+y);
+			throw new BoardException("No pill at "+x+","+y);
 		}
 
 		Pill pill = getPillAt(x, y);
 		gameObjects.remove(pill);
 		pills.remove(pill);
 		changeListener.removed(pill);
+	}
+	
+	public int getPillAmount() {
+		return pills.size();
 	}
 
 
@@ -170,28 +227,26 @@ public class Board {
 		return wallCords[y][x].contains(Direction.DOWN);
 	}
 
-	public boolean hasPill(Coordinate coord) {
-		return hasPill(coord.getX(), coord.getY());
-	}
-
 	/**
-	 * Creates a new queue of actors which can be used to process their actions in a turn-based fashion.
+	 * Creates a new game round from where we can get actors in order so they can do their stuff in a turn-based fashion.
 	 */
-	public Queue<GameActor> newActorQueue() {
-		return new LinkedList<GameActor>(gameChars);
+	public Round newGameRound() {
+		List<Actor> actors = new ArrayList<Actor>( gameActors );
+		actors.add(gameJudge);
+		return new Round(actors);
 	}
 
 	public void setChangeListener(ChangeListener listener) {
 		this.changeListener = listener;
 	}
 	
-	public Ghost addGhost(int x, int y, MovementStyle moveStyle, int speed) {
-		Ghost ghost = new Ghost(this, moveStyle, speed);
-		ghost.setCoords(x, y);
-		gameChars.add(ghost);
-		gameObjects.add(ghost);
-		changeListener.added(ghost);
-		return ghost;
+	public Monster addMonster(int x, int y, MovementStyle moveStyle, int speed) {
+		Monster monster = new Monster(this, moveStyle, speed);
+		monster.setCoords(x, y);
+		gameActors.add(monster);
+		gameObjects.add(monster);
+		changeListener.added(monster);
+		return monster;
 	}
 
 	public List<GameObject> getGameObjects() {
@@ -201,11 +256,25 @@ public class Board {
 	public Socman addSocman(int x, int y) {
 		Socman socman = new Socman(this);
 		socman.setCoords(x, y);
-		gameChars.add(socman);
+		gameActors.add(socman);
 		gameObjects.add(socman);
 		changeListener.added(socman);
 		return socman;
 	}
 
+	public void setStatus(Status status) {
+		this.status = status;
+	}
+
+	public Status getStatus() {
+		return status;
+	}
+
+	public boolean isGameActive() {
+		return Status.GAME_ACTIVE.equals(getStatus());
+	}
+
 	
+
+
 }

@@ -2,7 +2,7 @@ package socman.model;
 
 import java.util.Random;
 
-import socman.model.gameobject.Ghost.MovementStyle;
+import socman.model.gameobject.Monster.MovementStyle;
 
 /**
  * Generates semi-random boards
@@ -24,9 +24,9 @@ public class BoardGenerator {
 
 		board.addSocman(width/2, height/2);		
 		
-		board.addGhost(rnd.nextInt(width), rnd.nextInt(height), MovementStyle.CLOCKWISE, 2);
-		board.addGhost(rnd.nextInt(width), rnd.nextInt(height), MovementStyle.COUNTER_CLOCKWISE, 1);
-		board.addGhost(rnd.nextInt(width), rnd.nextInt(height), MovementStyle.COUNTER_CLOCKWISE, 5);
+		board.addMonster(rnd.nextInt(width), rnd.nextInt(height), MovementStyle.CLOCKWISE, 2);
+		board.addMonster(rnd.nextInt(width), rnd.nextInt(height), MovementStyle.COUNTER_CLOCKWISE, 1);
+		board.addMonster(rnd.nextInt(width), rnd.nextInt(height), MovementStyle.COUNTER_CLOCKWISE, 3);
 
 		return board;
 	}

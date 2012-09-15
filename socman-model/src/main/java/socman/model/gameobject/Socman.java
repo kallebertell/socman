@@ -9,6 +9,10 @@ import socman.model.action.Action;
 import socman.model.action.EatPillAction;
 import socman.model.action.MovementAction;
 
+/**
+ * Our heroic protagonist. Separation of Concerns-Man. 
+ * Probably the worst use of imagination ever.
+ */
 public class Socman extends GameActor {
 
 	public Socman(Board board) {
@@ -16,22 +20,22 @@ public class Socman extends GameActor {
 	}
 
 	@Override
-	public Queue<Action> createActions(Direction dir) {
-		Queue<Action> events = super.createActions(dir);
+	public Queue<Action> createActionsForTurn(Direction dir) {
+		Queue<Action> actions = super.createActionsForTurn(dir);
 		
 		if (canMove(dir)) {
 			Coordinate newCoord = dir.adjust(getCoordninate());
-			events.add(new MovementAction(this, getCoordninate(), newCoord));
+			actions.add(new MovementAction(this, getCoordninate(), newCoord));
 			if (board.hasPill(newCoord)) {
-				events.add(new EatPillAction(board, newCoord));
+				actions.add(new EatPillAction(board, newCoord));
 			}
-		
+			
 		} else {
 			// If we can't move we won't let anyone move
-			events.add(Action.cancel);
+			actions.add(Action.cancel);
 		}
 		
-		return events;
+		return actions;
 	}
 
 }

@@ -1,4 +1,4 @@
-package pacturn.model;
+package socman.model;
 
 import static org.junit.Assert.assertEquals;
 
